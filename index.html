@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Student 5 - Machine Language Emulator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 30px;
+            background: #eef2f7;
+            color: #222;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: #1f3c5b;
+            margin-bottom: 5px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 25px;
+        }
+
+        .box {
+            background: white;
+            border: 1px solid #d5dce5;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+        }
+
+        h2 {
+            color: #1f3c5b;
+            border-bottom: 2px solid #dbe4ee;
+            padding-bottom: 8px;
+        }
+
+        input {
+            padding: 10px;
+            border: 1px solid #bbb;
+            border-radius: 5px;
+            width: 80%;
+            font-size: 14px;
+        }
+
+        button {
+            padding: 10px 16px;
+            margin: 10px 5px 5px 0;
+            border: none;
+            border-radius: 5px;
+            background: #2f6f9f;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        button:hover {
+            background: #245878;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-top: 10px;
+            background: white;
+        }
+
+        th {
+            background: #2f6f9f;
+            color: white;
+        }
+
+        th, td {
+            border: 1px solid #d5dce5;
+            padding: 9px;
+            text-align: center;
+        }
+
+        tr:nth-child(even) {
+            background: #f5f8fb;
+        }
+
+        #output {
+            min-height: 40px;
+            border: 1px solid #c8d2dc;
+            border-radius: 6px;
+            padding: 12px;
+            background: #f4f7fa;
+            font-weight: bold;
+        }
+
+        .instructions {
+            display: inline-block;
+            background: #f1f5f9;
+            padding: 10px 15px;
+            border-radius: 6px;
+            border-left: 4px solid #2f6f9f;
+        }
+
+        @media (max-width: 700px) {
+            body {
+                padding: 15px;
+            }
+
+            input {
+                width: 95%;
+            }
+        }
+            .steps { background:#f4f7fa; border:1px solid #c8d2dc; border-radius:6px; padding:12px; min-height:40px; }
+        .step { padding:7px; border-bottom:1px solid #dbe2e8; }
+        .step:last-child { border-bottom:none; }
+    </style>
+</head>
+
+<body>
+<div class="container">
+
+    <h1>Machine Language Emulator</h1>
+    <p class="subtitle">Student 5 - Fundamentals of Computing</p>
+
+    <div class="box">
+        <h2>Student 5 Project</h2>
+        <p>
+            This simple emulator demonstrates how a CPU can execute
+            basic machine instructions. The program uses memory,
+            an accumulator, a program counter, and simple instructions.
+        </p>
+
+        <h3>Instructions</h3>
+        <p class="instructions">
+            01 = LOAD  | 
+            02 = ADD   |
+            03 = SUB   |
+            04 = STORE   |
+            05 = OUTPUT   |
+            06 = HALT
+        </p>
+    </div>
+
+    <div class="box">
+        <h2>Enter Machine Code</h2>
+
+        <p>Enter instructions like: <b>01=10 02=11 04=12 05=12 06</b></p>
+
+        <input type="text" id="program"
+               value="01=10 02=11 04=12 05=12 06"
+               size="50">
+
+        <br>
+
+        <button onclick="loadProgram()">Load Program</button>
+        <button onclick="runProgram()">Run Program</button>
+        <button onclick="resetComputer()">Reset</button>
+    </div>
+
+    <div class="box">
+        <h2>CPU Registers</h2>
+
+        <table>
+            <tr>
+                <th>Register</th>
+                <th>Value</th>
+            </tr>
+            <tr>
+                <td>Program Counter (PC)</td>
+                <td id="pc">0</td>
+            </tr>
+            <tr>
+                <td>Accumulator (ACC)</td>
+                <td id="acc">0</td>
+            </tr>
+            <tr>
+                <td>Instruction Register (IR)</td>
+                <td id="ir">0</td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="box">
+        <h2>Memory</h2>
+
+        <table id="memoryTable">
+            <tr>
+                <th>Address</th>
+                <th>Value</th>
+            </tr>
+        </table>
+    </div>
+
+    <div class="box">
+        <h2>CPU Output</h2>
+        <div id="output">Nothing has been executed yet.</div>
+    </div>
+
+    <div class="box">
+        <h2>Execution Steps</h2>
+        <div id="steps" class="steps">No program has been run yet.</div>
+    </div>
+
+
+<script>
+    // Simple computer memory
+    let memory = new Array(20).fill(0);
+
+    // CPU registers
+    let PC = 0;
+    let ACC = 0;
+    let IR = 0;
+
+    let running = false;
+    let executionSteps = [];
+
+
+    // Load the machine code into memory
+    function loadProgram() {
+
+        resetComputer();
+
+        let text = document.getElementById("program").value;
+        // Allow instructions to be written like 01=10 02=11
+        // The "=" is only used to make the machine code easier to read.
+        let numbers = text.replace(/=/g, " ").trim().split(/\s+/).map(Number);
+
+        for (let i = 0; i < numbers.length && i < memory.length; i++) {
+            memory[i] = numbers[i];
+        }
+
+        // Example data values
+        memory[10] = 5;
+        memory[11] = 3;
+
+        showMemory();
+
+        executionSteps = [];
+        document.getElementById("steps").innerHTML =
+            "Program loaded. Click Run Program to see the execution steps.";
+
+        document.getElementById("output").innerHTML =
+            "Program loaded into memory.";
+    }
+
+
+    // Run the machine language program
+    function runProgram() {
+
+        running = true;
+
+        while (running && PC < memory.length) {
+
+            // FETCH
+            IR = memory[PC];
+            PC++;
+
+            // DECODE AND EXECUTE
+            if (IR == 1) {
+                // LOAD address
+                let address = memory[PC];
+                PC++;
+                ACC = memory[address];
+                executionSteps.push("LOAD " + address + " → ACC = " + ACC);
+            }
+
+            else if (IR == 2) {
+                // ADD address
+                let address = memory[PC];
+                PC++;
+                ACC = ACC + memory[address];
+                executionSteps.push("ADD " + address + " → ACC = " + ACC);
+            }
+
+            else if (IR == 3) {
+                // SUB address
+                let address = memory[PC];
+                PC++;
+                ACC = ACC - memory[address];
+                executionSteps.push("SUB " + address + " → ACC = " + ACC);
+            }
+
+            else if (IR == 4) {
+                // STORE address
+                let address = memory[PC];
+                PC++;
+                memory[address] = ACC;
+                executionSteps.push("STORE " + address + " → Memory[" + address + "] = " + ACC);
+            }
+
+            else if (IR == 5) {
+                // OUTPUT address
+                let address = memory[PC];
+                PC++;
+                document.getElementById("output").innerHTML =
+                    "Program Output: " + memory[address];
+                executionSteps.push("OUTPUT " + address + " → " + memory[address]);
+            }
+
+            else if (IR == 6) {
+                executionSteps.push("HALT → Program stopped");
+                // HALT
+                running = false;
+            }
+
+            else {
+                running = false;
+                document.getElementById("output").innerHTML =
+                    "Error: Unknown instruction " + IR;
+            }
+        }
+
+        updateRegisters();
+        showMemory();
+        showExecutionSteps();
+    }
+
+
+    // Reset the computer
+    function resetComputer() {
+
+        memory = new Array(20).fill(0);
+
+        PC = 0;
+        ACC = 0;
+        IR = 0;
+        running = false;
+        executionSteps = [];
+
+        updateRegisters();
+        showMemory();
+
+        document.getElementById("output").innerHTML =
+            "Computer reset.";
+    }
+
+
+    // Display CPU registers
+    function updateRegisters() {
+
+        document.getElementById("pc").innerHTML = PC;
+        document.getElementById("acc").innerHTML = ACC;
+        document.getElementById("ir").innerHTML = IR;
+    }
+
+
+    // Display the steps taken by the CPU
+    function showExecutionSteps() {
+        let box = document.getElementById("steps");
+        if (executionSteps.length == 0) {
+            box.innerHTML = "No program has been run yet.";
+            return;
+        }
+        box.innerHTML = "";
+        for (let i = 0; i < executionSteps.length; i++) {
+            let step = document.createElement("div");
+            step.className = "step";
+            step.innerHTML = "<b>Step " + (i + 1) + ":</b> " + executionSteps[i];
+            box.appendChild(step);
+        }
+    }
+
+
+    // Display memory
+    function showMemory() {
+
+        let table = document.getElementById("memoryTable");
+
+        table.innerHTML =
+            "<tr><th>Address</th><th>Value</th></tr>";
+
+        for (let i = 0; i < memory.length; i++) {
+
+            let row = table.insertRow();
+
+            row.insertCell(0).innerHTML = i;
+            row.insertCell(1).innerHTML = memory[i];
+        }
+    }
+
+
+    // Show memory when page opens
+    showMemory();
+    updateRegisters();
+
+</script>
+
+</div>
+</body>
+</html>
